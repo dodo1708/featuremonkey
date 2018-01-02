@@ -8,6 +8,9 @@ import importlib
 import inspect
 import os
 import sys
+from typing import List, Type
+
+from featuremonkey.tracing.logger import NullOperationLogger
 
 from .helpers import (
     _delegate, _is_class_instance, _get_role_name,
@@ -16,7 +19,7 @@ from .helpers import (
 from .importhooks import LazyComposerHook
 
 
-def get_features_from_equation_file(filename):
+def get_features_from_equation_file(filename: str) -> List[str]:
     """
     returns list of feature names read from equation file given
     by ``filename``.
@@ -35,10 +38,12 @@ def get_features_from_equation_file(filename):
     :return:
     """
     features = []
-    for line in open(filename):
+    equation_file = open(filename)
+    for line in equation_file:
         line = line.split('#')[0].strip()
         if line:
             features.append(line)
+    equation_file.close()
     return features
 
 
@@ -59,7 +64,7 @@ if not os.environ.get('COMPOSITION_TRACER'):
 
 class Composer(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
         logger_class = self._get_logger_class()
         if logger_class:
             self.composition_tracer = logger_class()
@@ -68,7 +73,7 @@ class Composer(object):
                 logger=os.environ['COMPOSITION_TRACER']
             ))
 
-    def _get_logger_class(self):
+    def _get_logger_class(self) -> Type[NullOperationLogger]:
         logger_module = '.'.join(os.environ['COMPOSITION_TRACER'].split('.')[:-1])
         logger_class_name = os.environ['COMPOSITION_TRACER'].split('.')[-1]
         try:
@@ -161,7 +166,7 @@ class Composer(object):
         has no docstring set.
         """
         # first step: extract the original
-        special_refinement_type=None
+        special_refinement_type = None
         instance_refinement = _is_class_instance(base)
 
         if instance_refinement:
@@ -248,12 +253,12 @@ class Composer(object):
         else:
             # recurse after applying last role to object
             return self.compose(*(
-                list(things[:-2])  # all but the last two
-                # plus the composition of the last two
-                + [self._compose_pair(things[-2], things[-1])]
+                    list(things[:-2])  # all but the last two
+                    # plus the composition of the last two
+                    + [self._compose_pair(things[-2], things[-1])]
             ))
 
-    def compose_later(self, *things):
+    def compose_later(self, *things) -> None:
         """
         register list of things for composition using compose()
 
@@ -268,11 +273,11 @@ class Composer(object):
         if module_name in sys.modules:
             raise CompositionError(
                 'compose_later call after module has been imported: '
-                 + module_name
+                + module_name
             )
         LazyComposerHook.add(module_name, things[:-1], self)
 
-    def select(self, *features):
+    def select(self, *features) -> None:
         """
         selects the features given as string
         e.g
@@ -296,10 +301,10 @@ class Composer(object):
                             feature_name
                         )
                     )
-                args, varargs, keywords, defaults = inspect.getargspec(
+                argspec = inspect.getfullargspec(
                     feature_spec_module.select
                 )
-                if varargs or keywords or defaults or len(args) != 1:
+                if argspec.varargs or argspec.varkw or argspec.defaults or len(argspec.args) != 1:
                     raise CompositionError(
                         'invalid signature: %s.feature.select must '
                         'have the signature select(composer)' % (
@@ -319,7 +324,7 @@ class Composer(object):
                 # re-raise
                 raise
 
-    def select_equation(self, filename):
+    def select_equation(self, filename: str) -> None:
         """
         select features from equation file
 

@@ -1,7 +1,10 @@
 from __future__ import absolute_import
-from featuremonkey.composer import (Composer,
+
+from featuremonkey.composer import (
+    Composer,
     get_features_from_equation_file,
-    CompositionError)
+    CompositionError
+)
 
 from featuremonkey.importhooks import ImportGuardHook
 

@@ -45,6 +45,9 @@ from .helper import (
 )
 
 
+from typing import Any, List
+
+
 def _serialize_method(obj):
     return _serialize_function(obj)
 
@@ -156,7 +159,7 @@ def serialize_obj(obj):
     return obj
 
 
-def serialize_operation_log(operation_log):
+def serialize_operation_log(operation_log: List[Any]) -> List[Any]:
     for operation in operation_log:
         operation['old_value'] = serialize_obj(operation['old_value'])
         operation['new_value'] = serialize_obj(operation['new_value'])

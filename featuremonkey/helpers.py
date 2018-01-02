@@ -43,6 +43,7 @@ if sys.version_info < (2, 7):
     def _extract_staticmethod(m):
         return m.__get__(True)
 
+
     def _extract_classmethod(m):
         return m.__get__(True).im_func
 
@@ -50,5 +51,6 @@ else:
 
     def _extract_staticmethod(m):
         return m.__func__
+
 
     _extract_classmethod = _extract_staticmethod

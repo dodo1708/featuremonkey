@@ -1,5 +1,7 @@
-import sys
 import importlib
+import sys
+from typing import Callable, List, Optional, Tuple
+
 
 class ImportHookBase(object):
     """
@@ -8,10 +10,10 @@ class ImportHookBase(object):
     provides utility methods to install and
     remove the hook
     """
-    _hook=None
+    _hook = None
 
     @classmethod
-    def _insert_hook(cls):
+    def _insert_hook(cls) -> None:
         '''
         appends the hook to sys.meta_path
 
@@ -22,7 +24,7 @@ class ImportHookBase(object):
         sys.meta_path.append(cls._hook)
 
     @classmethod
-    def _install(cls):
+    def _install(cls) -> None:
         """
         install the hook if not already done
         """
@@ -31,7 +33,7 @@ class ImportHookBase(object):
             cls._insert_hook()
 
     @classmethod
-    def _uninstall(cls):
+    def _uninstall(cls) -> None:
         """
         uninstall the hook if installed
         """
@@ -66,7 +68,7 @@ class LazyComposerHook(ImportHookBase):
     _to_compose = dict()
 
     @classmethod
-    def add(cls, module_name, fsts, composer):
+    def add(cls, module_name: str, fsts: Tuple[Callable], composer) -> None:
         '''
         add a couple of fsts to be superimposed on the module given
         by module_name as soon as it is imported.
@@ -79,11 +81,9 @@ class LazyComposerHook(ImportHookBase):
         )
         cls._install()
 
-
-    def find_module(self, fullname, path=None):
+    def find_module(self, fullname: str, path: Optional[List[str]] = None) -> None:
         if fullname in self._to_compose:
             return self
-
 
     def load_module(self, module_name):
         layers = self._to_compose.pop(module_name)
@@ -98,6 +98,7 @@ class LazyComposerHook(ImportHookBase):
 
 
 class ImportGuard(ImportError): pass
+
 
 class ImportGuardHook(ImportHookBase):
     """
@@ -124,12 +125,12 @@ class ImportGuardHook(ImportHookBase):
     _num_entries = 0
 
     @classmethod
-    def _insert_hook(cls):
-        #the guard hook needs to be first
+    def _insert_hook(cls) -> None:
+        # the guard hook needs to be first
         sys.meta_path.insert(0, cls._hook)
 
     @classmethod
-    def add(cls, module_name, msg=''):
+    def add(cls, module_name: str, msg: str = '') -> None:
         '''
         Until the guard is dropped again,
         disallow imports of the module given by ``module_name``.
@@ -147,13 +148,13 @@ class ImportGuardHook(ImportHookBase):
                 'Module to guard has already been imported: '
                 + module_name
             )
-        cls._guards.setdefault(module_name,  [])
+        cls._guards.setdefault(module_name, [])
         cls._guards[module_name].append(msg)
         cls._num_entries += 1
         cls._install()
 
     @classmethod
-    def remove(cls, module_name):
+    def remove(cls, module_name: str) -> None:
         """
         drop a previously created guard on ``module_name``
         if the module is not guarded, then this is a no-op.
@@ -169,13 +170,13 @@ class ImportGuardHook(ImportHookBase):
                     )
                 cls._uninstall()
 
-    def find_module(self, fullname, path=None):
+    def find_module(self, fullname: str, path: Optional[List[str]] = None) -> None:
         if self._guards.get(fullname, False):
             return self
 
     def load_module(self, module_name):
         raise ImportGuard(
             'Import while import guard in place: '
-            #msg of latest guard that has been placed on module
+            # msg of latest guard that has been placed on module
             + (self._guards[module_name][-1] or module_name)
         )
